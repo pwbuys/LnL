@@ -16,10 +16,20 @@ export interface CardStats {
   incorrectAttempts: number;
 }
 
+/**
+ * Set card structure (shared, no progress)
+ * Used for storage - progress is user-specific
+ */
+export interface SetCard {
+  id: string;
+  question: string;
+  answer: number;
+}
+
 export interface MathSet {
   id: string;
   name: string;
-  cards: MathCard[];
+  cards: SetCard[]; // Structure only, progress is user-specific
   createdAt: Date;
   updatedAt: Date;
 }

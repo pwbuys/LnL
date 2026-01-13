@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { MathCard } from '../models/math-card.model';
 import { MathStateService } from './math-state.service';
+import { MathSettingsService } from './math-settings.service';
 
 export interface AnswerResult {
   isCorrect: boolean;
@@ -14,26 +15,37 @@ export interface AnswerResult {
 })
 export class ExerciseEngineService {
   private readonly mathStateService = inject(MathStateService);
-  private readonly speedThresholdMs = 3000;
+  private readonly settingsService = inject(MathSettingsService);
   private readonly weightIncreaseOnWrong = 5;
   private readonly weightDecreaseOnMastered = 1;
   private readonly minWeight = 1;
+  private readonly maxWeight = 7;
 
   /**
    * Get the next card using weighted random selection.
    * Cards with higher weights have a higher probability of being selected.
+   * @param cards - Array of available cards (with user progress merged)
+   * @param excludeCardId - Optional card ID to exclude from selection (prevents same question twice in a row)
    */
-  getNextCard(cards: MathCard[]): MathCard | null {
+  getNextCard(cards: MathCard[], excludeCardId?: string): MathCard | null {
     if (!cards || cards.length === 0) {
       return null;
     }
 
+    // Filter out the excluded card if provided
+    const availableCards = excludeCardId
+      ? cards.filter(card => card.id !== excludeCardId)
+      : cards;
+
+    // If no cards available after filtering, allow the excluded card (edge case: only one card)
+    const cardsToUse = availableCards.length > 0 ? availableCards : cards;
+
     // Calculate total weight
-    const totalWeight = cards.reduce((sum, card) => sum + card.weight, 0);
+    const totalWeight = cardsToUse.reduce((sum, card) => sum + card.weight, 0);
 
     if (totalWeight === 0) {
       // Fallback to uniform random if all weights are 0
-      return cards[Math.floor(Math.random() * cards.length)];
+      return cardsToUse[Math.floor(Math.random() * cardsToUse.length)];
     }
 
     // Generate random number between 0 and totalWeight
@@ -41,7 +53,7 @@ export class ExerciseEngineService {
 
     // Find the card using cumulative weight selection
     let cumulativeWeight = 0;
-    for (const card of cards) {
+    for (const card of cardsToUse) {
       cumulativeWeight += card.weight;
       if (random < cumulativeWeight) {
         return card;
@@ -49,7 +61,7 @@ export class ExerciseEngineService {
     }
 
     // Fallback (shouldn't reach here, but just in case)
-    return cards[cards.length - 1];
+    return cardsToUse[cardsToUse.length - 1];
   }
 
   /**
@@ -62,9 +74,10 @@ export class ExerciseEngineService {
       throw new Error(`Card with id ${cardId} not found`);
     }
 
+    const speedThreshold = this.settingsService.speedThresholdMs();
     const isCorrect = userAnswer === card.answer;
-    const isFast = isCorrect && timeTakenMs < this.speedThresholdMs;
-    const isSlow = isCorrect && timeTakenMs >= this.speedThresholdMs;
+    const isFast = isCorrect && timeTakenMs < speedThreshold;
+    const isSlow = isCorrect && timeTakenMs >= speedThreshold;
 
     let newWeight = card.weight;
 
@@ -73,11 +86,14 @@ export class ExerciseEngineService {
       newWeight = card.weight + this.weightIncreaseOnWrong;
     } else if (isFast) {
       // Correct and fast: decrease weight (mastered)
-      newWeight = Math.max(this.minWeight, card.weight - this.weightDecreaseOnMastered);
+      newWeight = card.weight - this.weightDecreaseOnMastered;
     } else if (isSlow) {
       // Correct but slow: slight increase or keep same (needs practice)
       newWeight = card.weight + 1;
     }
+
+    // Clamp weight between min and max
+    newWeight = Math.max(this.minWeight, Math.min(this.maxWeight, newWeight));
 
     // Update card statistics
     const updatedStats = {
@@ -152,7 +168,7 @@ export class ExerciseEngineService {
    * Get the speed threshold in milliseconds
    */
   getSpeedThresholdMs(): number {
-    return this.speedThresholdMs;
+    return this.settingsService.speedThresholdMs();
   }
 }
 
