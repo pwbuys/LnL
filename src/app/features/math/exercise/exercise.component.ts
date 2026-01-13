@@ -71,7 +71,8 @@ type FeedbackType = 'none' | 'correct' | 'incorrect' | 'slow';
   `,
   styles: `
     .exercise-container {
-      min-height: 100vh;
+      min-height: 100vh; /* Fallback for older browsers */
+      min-height: 100dvh; /* Dynamic viewport height - accounts for mobile browser UI */
       display: flex;
       flex-direction: column;
       background: var(--bg-primary, #fff);
@@ -128,31 +129,42 @@ type FeedbackType = 'none' | 'correct' | 'incorrect' | 'slow';
       justify-content: center;
       padding: 2rem 1rem;
       transition: all 0.3s ease;
+      max-height: 40vh;
+      min-height: 0;
+      overflow: hidden;
     }
 
     .question-display {
       text-align: center;
       width: 100%;
       max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      max-height: 100%;
+      overflow: hidden;
     }
 
     .question-text {
-      font-size: clamp(3rem, 10vw, 6rem);
+      font-size: clamp(2rem, min(8vw, 6vh), 5rem);
       font-weight: 700;
-      margin: 0 0 2rem 0;
+      margin: 0 0 clamp(1rem, 2vh, 2rem) 0;
       color: var(--text-primary, #333);
       line-height: 1.2;
+      flex-shrink: 1;
     }
 
     .answer-display {
-      margin-bottom: 1rem;
+      margin-bottom: clamp(0.5rem, 1vh, 1rem);
+      flex-shrink: 1;
     }
 
     .answer-value {
-      font-size: clamp(2rem, 6vw, 4rem);
+      font-size: clamp(1.5rem, min(5vw, 4vh), 3.5rem);
       font-weight: 600;
       color: var(--answer-color, #4caf50);
-      min-height: 4rem;
+      min-height: clamp(2rem, 4vh, 4rem);
       display: inline-block;
     }
 
@@ -175,8 +187,16 @@ type FeedbackType = 'none' | 'correct' | 'incorrect' | 'slow';
     }
 
     .keypad-container {
-      padding: 1rem;
+      padding: 0;
       background: var(--keypad-container-bg, #f5f5f5);
+      flex-shrink: 0;
+      overflow: hidden;
+      /* Limit keypad to 40% of viewport height, ensuring space for question */
+      height: min(40vh, 400px);
+      min-height: 200px;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
     }
 
     .loading {

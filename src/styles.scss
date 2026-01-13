@@ -21,7 +21,8 @@ html, body {
 }
 
 body {
-  min-height: 100vh;
+  min-height: 100vh; /* Fallback for older browsers */
+  min-height: 100dvh; /* Dynamic viewport height - accounts for mobile browser UI */
 }
 
 @media (prefers-color-scheme: dark) {

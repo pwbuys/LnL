@@ -71,7 +71,8 @@ import { MathSettingsService } from '../../../services/math-settings.service';
   `,
   styles: `
     .settings {
-      min-height: 100vh;
+      min-height: 100vh; /* Fallback for older browsers */
+      min-height: 100dvh; /* Dynamic viewport height - accounts for mobile browser UI */
       padding: 1rem;
       background: var(--bg-primary, #fff);
       color: var(--text-primary, #333);

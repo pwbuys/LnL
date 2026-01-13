@@ -12,26 +12,26 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('1')"
-          aria-label="One"
+          (click)="onButtonClick('7')"
+          aria-label="Seven"
         >
-          1
+          7
         </button>
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('2')"
-          aria-label="Two"
+          (click)="onButtonClick('8')"
+          aria-label="Eight"
         >
-          2
+          8
         </button>
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('3')"
-          aria-label="Three"
+          (click)="onButtonClick('9')"
+          aria-label="Nine"
         >
-          3
+          9
         </button>
       </div>
       <div class="keypad-row">
@@ -64,26 +64,26 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('7')"
-          aria-label="Seven"
+          (click)="onButtonClick('1')"
+          aria-label="One"
         >
-          7
+          1
         </button>
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('8')"
-          aria-label="Eight"
+          (click)="onButtonClick('2')"
+          aria-label="Two"
         >
-          8
+          2
         </button>
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('9')"
-          aria-label="Nine"
+          (click)="onButtonClick('3')"
+          aria-label="Three"
         >
-          9
+          3
         </button>
       </div>
       <div class="keypad-row">
@@ -118,22 +118,37 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
     .keypad {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
-      padding: 1rem;
+      gap: clamp(0.5rem, 1.5vh, 1rem);
+      padding: clamp(0.75rem, 2vh, 1.5rem);
       background: var(--keypad-bg, #f5f5f5);
       border-radius: 0.5rem;
+      max-height: 100%;
+      overflow: hidden;
+      width: fit-content;
+      max-width: 100%;
+      box-sizing: border-box;
+      height: 100%;
+      margin: 0 auto;
     }
 
     .keypad-row {
       display: flex;
-      gap: 0.75rem;
+      gap: clamp(0.5rem, 1.5vh, 1rem);
       justify-content: center;
+      flex: 1;
+      min-height: 0;
     }
 
     .keypad-button {
-      min-width: 3rem;
-      min-height: 3rem;
-      font-size: 1.5rem;
+      /* Use the smaller of viewport width or height to prevent overflow on wide screens */
+      /* Scale based on viewport height primarily, with width as secondary constraint */
+      width: clamp(3rem, min(12vw, 10vh), 6rem);
+      height: clamp(3rem, min(12vw, 10vh), 6rem);
+      /* Ensure buttons don't exceed container */
+      max-width: 100%;
+      max-height: 100%;
+      /* Font size scales proportionally */
+      font-size: clamp(1.25rem, min(4vw, 3.5vh), 2.5rem);
       font-weight: 600;
       border: 2px solid var(--keypad-border, #ccc);
       border-radius: 0.5rem;
@@ -143,6 +158,11 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
       transition: all 0.2s ease;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
+      flex-shrink: 1;
+      flex-grow: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .keypad-button:hover {
