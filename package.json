@@ -5,6 +5,8 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:deploy": "ng build --configuration production --base-href /LnL/ && ngh --dir .\\dist\\school-helper\\browser",
+    "deploy": "ngh --dir .\\dist\\school-helper\\browser",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
