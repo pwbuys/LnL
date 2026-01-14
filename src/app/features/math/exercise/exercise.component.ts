@@ -188,15 +188,18 @@ type FeedbackType = 'none' | 'correct' | 'incorrect' | 'slow';
 
     .keypad-container {
       padding: 0;
-      background: var(--keypad-container-bg, #f5f5f5);
+      background: var(--keypad-container-bg, #2a2a2a);
       flex-shrink: 0;
       overflow: hidden;
-      /* Limit keypad to 40% of viewport height, ensuring space for question */
-      height: min(40vh, 400px);
-      min-height: 200px;
+      /* Fill remaining space after question area */
+      flex: 1;
+      min-height: 0;
       display: flex;
       align-items: stretch;
       justify-content: center;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
     }
 
     .loading {

@@ -6,6 +6,9 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
 @Component({
   selector: 'app-numeric-keypad',
   imports: [],
+  host: {
+    style: 'display: block; width: 100%; max-width: 600px;'
+  },
   template: `
     <div class="keypad" role="group" aria-label="Numeric keypad">
       <div class="keypad-row">
@@ -118,67 +121,70 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
     .keypad {
       display: flex;
       flex-direction: column;
-      gap: clamp(0.5rem, 1.5vh, 1rem);
-      padding: clamp(0.75rem, 2vh, 1.5rem);
-      background: var(--keypad-bg, #f5f5f5);
-      border-radius: 0.5rem;
+      gap: 0;
+      padding: 0;
+      background: var(--keypad-bg, #2a2a2a);
       max-height: 100%;
       overflow: hidden;
-      width: fit-content;
-      max-width: 100%;
+      width: 100%;
+      max-width: 600px;
       box-sizing: border-box;
       height: 100%;
-      margin: 0 auto;
     }
 
     .keypad-row {
       display: flex;
-      gap: clamp(0.5rem, 1.5vh, 1rem);
-      justify-content: center;
+      gap: 0;
       flex: 1;
       min-height: 0;
     }
 
     .keypad-button {
-      /* Use the smaller of viewport width or height to prevent overflow on wide screens */
-      /* Scale based on viewport height primarily, with width as secondary constraint */
-      width: clamp(3rem, min(12vw, 10vh), 6rem);
-      height: clamp(3rem, min(12vw, 10vh), 6rem);
-      /* Ensure buttons don't exceed container */
-      max-width: 100%;
-      max-height: 100%;
-      /* Font size scales proportionally */
-      font-size: clamp(1.25rem, min(4vw, 3.5vh), 2.5rem);
-      font-weight: 600;
-      border: 2px solid var(--keypad-border, #ccc);
-      border-radius: 0.5rem;
-      background: var(--keypad-button-bg, #fff);
-      color: var(--keypad-text, #333);
+      flex: 1;
+      border: none;
+      border-right: 1px solid var(--keypad-border, #444);
+      border-bottom: 1px solid var(--keypad-border, #444);
+      background: var(--keypad-button-bg, #333);
+      color: var(--keypad-text, #fff);
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: background 0.1s ease;
       touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      flex-shrink: 1;
-      flex-grow: 0;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: clamp(1.5rem, 5vh, 3rem);
+      font-weight: 600;
+      user-select: none;
+      -webkit-user-select: none;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .keypad-row:last-child .keypad-button {
+      border-bottom: none;
+    }
+
+    .keypad-button:last-child {
+      border-right: none;
     }
 
     .keypad-button:hover {
-      background: var(--keypad-button-hover, #e0e0e0);
-      transform: scale(1.05);
+      background: var(--keypad-button-hover, #444);
     }
 
     .keypad-button:active {
-      transform: scale(0.95);
-      background: var(--keypad-button-active, #d0d0d0);
+      background: var(--keypad-button-active, #555);
+    }
+
+    .keypad-button:focus {
+      outline: 2px solid var(--keypad-focus, #4caf50);
+      outline-offset: -2px;
     }
 
     .keypad-button-enter {
       background: var(--keypad-enter-bg, #4caf50);
       color: var(--keypad-enter-text, #fff);
-      border-color: var(--keypad-enter-border, #45a049);
     }
 
     .keypad-button-enter:hover {
@@ -189,6 +195,18 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
       background: var(--keypad-enter-active, #3d8b40);
     }
 
+    @media (prefers-color-scheme: light) {
+      .keypad {
+        --keypad-bg: #e0e0e0;
+        --keypad-border: #ccc;
+        --keypad-button-bg: #f5f5f5;
+        --keypad-text: #333;
+        --keypad-button-hover: #e0e0e0;
+        --keypad-button-active: #d0d0d0;
+        --keypad-focus: #4caf50;
+      }
+    }
+
     @media (prefers-color-scheme: dark) {
       .keypad {
         --keypad-bg: #2a2a2a;
@@ -197,6 +215,7 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         --keypad-text: #fff;
         --keypad-button-hover: #444;
         --keypad-button-active: #555;
+        --keypad-focus: #4caf50;
       }
     }
   `,
