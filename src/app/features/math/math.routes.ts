@@ -25,11 +25,6 @@ export const mathRoutes: Routes = [
     path: 'summary',
     loadComponent: () =>
       import('./summary/summary.component').then(m => m.SummaryComponent)
-  },
-  {
-    path: 'settings',
-    loadComponent: () =>
-      import('./settings/settings.component').then(m => m.SettingsComponent)
   }
 ];
 

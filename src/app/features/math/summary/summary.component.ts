@@ -2,7 +2,8 @@ import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { MathStateService } from '../../../services/math-state.service';
-import { MathCard } from '../../../models/math-card.model';
+import { UserProgressService } from '../../../services/user-progress.service';
+import { MathCard, getLevelById, LEVELS, LevelId } from '../../../models/math-card.model';
 
 @Component({
   selector: 'app-summary',
@@ -11,9 +12,26 @@ import { MathCard } from '../../../models/math-card.model';
     <div class="summary">
       <header class="header">
         <h1>Session Summary</h1>
+        @if (sessionStats()) {
+          <div class="session-info">
+            <span class="mode-badge" [class.timed]="isTimedMode()">
+              {{ isTimedMode() ? 'Timed' : 'Master' }}
+            </span>
+            <span class="level-badge" [class.ninja]="sessionStats()!.level === 'ninja'">
+              {{ levelName() }}
+            </span>
+          </div>
+        }
       </header>
 
       @if (sessionStats()) {
+        @if (isTimedMode()) {
+          <div class="timed-result">
+            <div class="timed-score">{{ sessionStats()!.correctAnswers }}</div>
+            <div class="timed-label">correct answers in {{ sessionStats()!.timedDuration }}s</div>
+          </div>
+        }
+
         <div class="stats-container">
           <div class="stat-card">
             <div class="stat-label">Total Questions</div>
@@ -65,7 +83,7 @@ import { MathCard } from '../../../models/math-card.model';
           </div>
         } @else {
           <div class="all-mastered">
-            <p>🎉 Great job! All cards are mastered!</p>
+            <p>Great job! All cards are mastered!</p>
           </div>
         }
       } @else {
@@ -75,6 +93,15 @@ import { MathCard } from '../../../models/math-card.model';
       }
 
       <div class="actions">
+        @if (canStartNextLevel()) {
+          <button
+            type="button"
+            class="action-button action-button-next-level"
+            (click)="startNextLevel()"
+          >
+            Next Level →
+          </button>
+        }
         <button
           type="button"
           class="action-button action-button-primary"
@@ -110,8 +137,57 @@ import { MathCard } from '../../../models/math-card.model';
 
     .header h1 {
       font-size: clamp(2rem, 5vw, 3rem);
-      margin: 0;
+      margin: 0 0 0.75rem 0;
       color: var(--text-primary, #333);
+    }
+
+    .session-info {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .mode-badge,
+    .level-badge {
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      background: var(--badge-bg, #e0e0e0);
+      color: var(--text-primary, #333);
+    }
+
+    .mode-badge.timed {
+      background: var(--timed-bg, #2196f3);
+      color: #fff;
+    }
+
+    .level-badge.ninja {
+      background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+      color: #fff;
+    }
+
+    .timed-result {
+      text-align: center;
+      padding: 2rem;
+      background: var(--timed-result-bg, #e3f2fd);
+      border: 2px solid var(--timed-result-border, #2196f3);
+      border-radius: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .timed-score {
+      font-size: clamp(4rem, 15vw, 8rem);
+      font-weight: 800;
+      color: var(--timed-score-color, #2196f3);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .timed-label {
+      font-size: clamp(1rem, 3vw, 1.5rem);
+      color: var(--text-secondary, #666);
+      font-weight: 500;
     }
 
     .stats-container {
@@ -265,6 +341,17 @@ import { MathCard } from '../../../models/math-card.model';
       background: var(--button-secondary-bg, #f0f0f0);
     }
 
+    .action-button-next-level {
+      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+      color: #fff;
+      border-color: #f57c00;
+      font-size: 1.125rem;
+    }
+
+    .action-button-next-level:hover {
+      background: linear-gradient(135deg, #f57c00 0%, #ef6c00 100%);
+    }
+
     @media (prefers-color-scheme: dark) {
       .summary {
         --bg-primary: #1a1a1a;
@@ -285,6 +372,10 @@ import { MathCard } from '../../../models/math-card.model';
         --button-primary-text: #fff;
         --button-secondary-border: #555;
         --button-secondary-bg: #333;
+        --timed-bg: #2196f3;
+        --timed-result-bg: #1565c0;
+        --timed-result-border: #2196f3;
+        --timed-score-color: #64b5f6;
       }
     }
   `,
@@ -292,10 +383,25 @@ import { MathCard } from '../../../models/math-card.model';
 })
 export class SummaryComponent {
   private readonly mathStateService = inject(MathStateService);
+  private readonly userProgressService = inject(UserProgressService);
   private readonly router = inject(Router);
 
   readonly sessionStats = this.mathStateService.currentSessionStats;
   readonly currentSet = this.mathStateService.currentSet;
+
+  readonly isTimedMode = computed(() => {
+    const stats = this.sessionStats();
+    return stats?.mode === 'timed';
+  });
+
+  readonly levelName = computed(() => {
+    const stats = this.sessionStats();
+    if (!stats?.level) {
+      return 'Level 1';
+    }
+    const level = getLevelById(stats.level);
+    return level.name;
+  });
 
   readonly accuracyPercentage = computed(() => {
     const stats = this.sessionStats();
@@ -325,6 +431,64 @@ export class SummaryComponent {
       .sort((a, b) => b.weight - a.weight)
       .slice(0, 10); // Show top 10 cards needing work
   });
+
+  /**
+   * Check if the user can start the next level
+   * True if: Master mode, level was mastered, and there's a next level available
+   */
+  readonly canStartNextLevel = computed(() => {
+    const stats = this.sessionStats();
+    const set = this.currentSet();
+    
+    // Must be master mode
+    if (!stats || stats.mode !== 'master' || !stats.level || !set) {
+      return false;
+    }
+
+    // Check if there's a next level
+    const currentLevelIndex = LEVELS.findIndex(l => l.id === stats.level);
+    if (currentLevelIndex === -1 || currentLevelIndex >= LEVELS.length - 1) {
+      return false; // Already at max level (ninja)
+    }
+
+    // Check if the current level was mastered
+    const setMastery = this.userProgressService.getSetMastery(set.id);
+    if (!setMastery) {
+      return false;
+    }
+
+    // Current level must be mastered
+    const masteryIndex = LEVELS.findIndex(l => l.id === setMastery);
+    return masteryIndex >= currentLevelIndex;
+  });
+
+  /**
+   * Get the next level ID
+   */
+  private getNextLevelId(): LevelId | null {
+    const stats = this.sessionStats();
+    if (!stats?.level) {
+      return null;
+    }
+
+    const currentLevelIndex = LEVELS.findIndex(l => l.id === stats.level);
+    if (currentLevelIndex === -1 || currentLevelIndex >= LEVELS.length - 1) {
+      return null;
+    }
+
+    return LEVELS[currentLevelIndex + 1].id;
+  }
+
+  startNextLevel(): void {
+    const set = this.currentSet();
+    const nextLevelId = this.getNextLevelId();
+    
+    if (set && nextLevelId) {
+      this.mathStateService.setExerciseOptions('master', nextLevelId);
+      this.mathStateService.startSession();
+      this.router.navigate(['/math/exercise', set.id]);
+    }
+  }
 
   startNewSession(): void {
     const set = this.currentSet();

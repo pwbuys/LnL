@@ -43,5 +43,30 @@ export interface SessionStats {
   slowAnswers: number;
   incorrectAnswers: number;
   averageTimeMs: number;
+  mode?: ExerciseMode;
+  timedDuration?: TimedDuration;
+  level?: LevelId;
+}
+
+// Exercise mode types
+export type ExerciseMode = 'master' | 'timed';
+export type TimedDuration = 30 | 60 | 90;
+export type LevelId = 'level1' | 'level2' | 'level3' | 'ninja';
+
+export interface Level {
+  id: LevelId;
+  name: string;
+  speedThresholdMs: number;
+}
+
+export const LEVELS: Level[] = [
+  { id: 'level1', name: 'Level 1', speedThresholdMs: 10000 },
+  { id: 'level2', name: 'Level 2', speedThresholdMs: 6000 },
+  { id: 'level3', name: 'Level 3', speedThresholdMs: 3000 },
+  { id: 'ninja', name: 'Ninja', speedThresholdMs: 1500 },
+];
+
+export function getLevelById(id: LevelId): Level {
+  return LEVELS.find(l => l.id === id) ?? LEVELS[0];
 }
 

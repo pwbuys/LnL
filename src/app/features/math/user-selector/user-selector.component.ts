@@ -374,8 +374,9 @@ export class UserSelectorComponent {
     const confirmMessage = `Are you sure you want to delete user "${userName}"? This will permanently delete all their progress and settings. This action cannot be undone.`;
     
     if (confirm(confirmMessage)) {
-      // Delete all user data (progress and settings) before deleting the user
+      // Delete all user data (progress, mastery, and settings) before deleting the user
       this.userProgressService.deleteUserProgress(userName);
+      this.userProgressService.deleteUserMastery(userName);
       this.settingsService.deleteUserSettings(userName);
       
       // Delete the user (this will also switch to another user if needed)

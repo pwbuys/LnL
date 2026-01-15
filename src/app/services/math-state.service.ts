@@ -1,5 +1,5 @@
 import { Injectable, signal, effect, inject } from '@angular/core';
-import { MathCard, MathSet, SessionStats, SetCard } from '../models/math-card.model';
+import { MathCard, MathSet, SessionStats, SetCard, ExerciseMode, TimedDuration, LevelId, getLevelById } from '../models/math-card.model';
 import { UserProgressService } from './user-progress.service';
 
 const STORAGE_KEY = 'school-helper-math-sets';
@@ -16,6 +16,19 @@ export class MathStateService {
   readonly availableSets = signal<MathSet[]>([]);
   readonly currentSet = signal<MathSet | null>(null);
   readonly currentSessionStats = signal<SessionStats | null>(null);
+
+  // Mode and level state
+  readonly currentMode = signal<ExerciseMode>('master');
+  readonly currentTimedDuration = signal<TimedDuration | null>(null);
+  readonly currentLevel = signal<LevelId>('level1');
+
+  /**
+   * Get the current speed threshold based on level
+   */
+  getSpeedThresholdMs(): number {
+    const level = getLevelById(this.currentLevel());
+    return level.speedThresholdMs;
+  }
 
   constructor() {
     // Load from localStorage first, then merge with mock data
@@ -239,6 +252,15 @@ export class MathStateService {
   }
 
   /**
+   * Set the exercise mode, duration (for timed), and level
+   */
+  setExerciseOptions(mode: ExerciseMode, level: LevelId, timedDuration?: TimedDuration): void {
+    this.currentMode.set(mode);
+    this.currentLevel.set(level);
+    this.currentTimedDuration.set(timedDuration ?? null);
+  }
+
+  /**
    * Start a new session
    */
   startSession(): void {
@@ -254,7 +276,10 @@ export class MathStateService {
       fastAnswers: 0,
       slowAnswers: 0,
       incorrectAnswers: 0,
-      averageTimeMs: 0
+      averageTimeMs: 0,
+      mode: this.currentMode(),
+      timedDuration: this.currentTimedDuration() ?? undefined,
+      level: this.currentLevel()
     };
 
     this.currentSessionStats.set(sessionStats);
@@ -361,7 +386,7 @@ export class MathStateService {
   }
 
   /**
-   * Reset progress for all cards in a set
+   * Reset progress and mastery for all cards in a set
    */
   resetSetProgress(setId: string): void {
     const set = this.getSetById(setId);
@@ -372,8 +397,8 @@ export class MathStateService {
     // Get all card IDs from the set
     const cardIds = set.cards.map(card => card.id);
     
-    // Reset progress for all cards in the set
-    this.userProgressService.resetSetProgress(cardIds);
+    // Reset progress and mastery for all cards in the set
+    this.userProgressService.resetSetProgressAndMastery(setId, cardIds);
   }
 }
 

@@ -15,7 +15,7 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('7')"
+          (pointerdown)="onButtonClick('7'); $event.preventDefault()"
           aria-label="Seven"
         >
           7
@@ -23,7 +23,7 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('8')"
+          (pointerdown)="onButtonClick('8'); $event.preventDefault()"
           aria-label="Eight"
         >
           8
@@ -31,7 +31,7 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('9')"
+          (pointerdown)="onButtonClick('9'); $event.preventDefault()"
           aria-label="Nine"
         >
           9
@@ -41,7 +41,7 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('4')"
+          (pointerdown)="onButtonClick('4'); $event.preventDefault()"
           aria-label="Four"
         >
           4
@@ -49,7 +49,7 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('5')"
+          (pointerdown)="onButtonClick('5'); $event.preventDefault()"
           aria-label="Five"
         >
           5
@@ -57,7 +57,7 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('6')"
+          (pointerdown)="onButtonClick('6'); $event.preventDefault()"
           aria-label="Six"
         >
           6
@@ -67,7 +67,7 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('1')"
+          (pointerdown)="onButtonClick('1'); $event.preventDefault()"
           aria-label="One"
         >
           1
@@ -75,7 +75,7 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('2')"
+          (pointerdown)="onButtonClick('2'); $event.preventDefault()"
           aria-label="Two"
         >
           2
@@ -83,7 +83,7 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('3')"
+          (pointerdown)="onButtonClick('3'); $event.preventDefault()"
           aria-label="Three"
         >
           3
@@ -93,7 +93,7 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('backspace')"
+          (pointerdown)="onButtonClick('backspace'); $event.preventDefault()"
           aria-label="Backspace"
         >
           ⌫
@@ -101,7 +101,7 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         <button
           type="button"
           class="keypad-button"
-          (click)="onButtonClick('0')"
+          (pointerdown)="onButtonClick('0'); $event.preventDefault()"
           aria-label="Zero"
         >
           0
@@ -109,7 +109,7 @@ export type KeypadButton = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' |
         <button
           type="button"
           class="keypad-button keypad-button-enter"
-          (click)="onButtonClick('enter')"
+          (pointerdown)="onButtonClick('enter'); $event.preventDefault()"
           aria-label="Enter"
         >
           ✓

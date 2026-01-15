@@ -12,7 +12,8 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { MathStateService } from '../../../services/math-state.service';
 import { ExerciseEngineService } from '../../../services/exercise-engine.service';
-import { MathCard } from '../../../models/math-card.model';
+import { UserProgressService } from '../../../services/user-progress.service';
+import { MathCard, getLevelById } from '../../../models/math-card.model';
 import { NumericKeypadComponent, KeypadButton } from '../shared/numeric-keypad/numeric-keypad.component';
 import { ProgressIndicatorComponent } from '../shared/progress-indicator/progress-indicator.component';
 
@@ -33,9 +34,31 @@ type FeedbackType = 'none' | 'correct' | 'incorrect' | 'slow';
           ✕
         </button>
         <div class="header-content">
-          <h2 class="set-name">{{ currentSet()?.name }}</h2>
-          @if (currentSet()) {
-            <app-progress-indicator [cards]="getCardsWithProgress()" />
+          <div class="header-row">
+            <h2 class="set-name">{{ currentSet()?.name }}</h2>
+            <div class="header-badges">
+              <span class="level-badge" [class.ninja]="currentLevel() === 'ninja'">
+                {{ levelName() }}
+              </span>
+              @if (isTimedMode()) {
+                <span 
+                  class="timer-badge" 
+                  [class.warning]="remainingSeconds() <= 10"
+                  [class.critical]="remainingSeconds() <= 5"
+                  aria-live="polite"
+                >
+                  {{ formatTime(remainingSeconds()) }}
+                </span>
+              }
+            </div>
+          </div>
+          @if (currentSet() && !isTimedMode()) {
+            <app-progress-indicator 
+              [cards]="getCardsWithProgress()" 
+              [setId]="currentSet()!.id" 
+              [showProgressBar]="true" 
+              [currentLevelId]="currentLevel()" 
+            />
           }
         </div>
       </header>
@@ -116,6 +139,60 @@ type FeedbackType = 'none' | 'correct' | 'incorrect' | 'slow';
       font-size: clamp(1rem, 2.5vw, 1.25rem);
       margin: 0;
       color: var(--text-secondary, #666);
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .header-badges {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .level-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      background: var(--level-bg, #e0e0e0);
+      color: var(--level-text, #333);
+    }
+
+    .level-badge.ninja {
+      background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+      color: #fff;
+    }
+
+    .timer-badge {
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: 0.25rem;
+      background: var(--timer-bg, #2196f3);
+      color: var(--timer-text, #fff);
+      min-width: 60px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timer-badge.warning {
+      background: var(--timer-warning, #ff9800);
+      animation: timerPulse 1s infinite;
+    }
+
+    .timer-badge.critical {
+      background: var(--timer-critical, #f44336);
+      animation: timerPulse 0.5s infinite;
+    }
+
+    @keyframes timerPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
     }
 
     .header-content app-progress-indicator {
@@ -278,6 +355,12 @@ type FeedbackType = 'none' | 'correct' | 'incorrect' | 'slow';
         --keypad-container-bg: #2a2a2a;
         --correct-bg: #2e7d32;
         --incorrect-bg: #c62828;
+        --level-bg: #444;
+        --level-text: #fff;
+        --timer-bg: #2196f3;
+        --timer-text: #fff;
+        --timer-warning: #ff9800;
+        --timer-critical: #f44336;
       }
     }
   `,
@@ -286,6 +369,7 @@ type FeedbackType = 'none' | 'correct' | 'incorrect' | 'slow';
 export class ExerciseComponent implements OnInit, OnDestroy {
   private readonly mathStateService = inject(MathStateService);
   private readonly exerciseEngine = inject(ExerciseEngineService);
+  private readonly userProgressService = inject(UserProgressService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -294,6 +378,22 @@ export class ExerciseComponent implements OnInit, OnDestroy {
   readonly answerInput = signal<string>('');
   readonly feedback = signal<FeedbackType>('none');
   readonly questionStartTime = signal<number>(0);
+
+  // Timer for timed mode
+  readonly remainingSeconds = signal<number>(0);
+  private timerIntervalId: number | null = null;
+
+  // Mode and level from state service
+  readonly currentMode = this.mathStateService.currentMode;
+  readonly currentLevel = this.mathStateService.currentLevel;
+  readonly currentTimedDuration = this.mathStateService.currentTimedDuration;
+
+  readonly isTimedMode = computed(() => this.currentMode() === 'timed');
+
+  readonly levelName = computed(() => {
+    const level = getLevelById(this.currentLevel());
+    return level.name;
+  });
 
   readonly getCardsWithProgress = computed(() => {
     const set = this.currentSet();
@@ -326,6 +426,15 @@ export class ExerciseComponent implements OnInit, OnDestroy {
     if (setId) {
       this.mathStateService.setCurrentSet(setId);
       this.mathStateService.startSession();
+
+      // Start timer for timed mode
+      if (this.isTimedMode()) {
+        const duration = this.currentTimedDuration();
+        if (duration) {
+          this.remainingSeconds.set(duration);
+          this.startTimer();
+        }
+      }
     } else {
       this.router.navigate(['/math']);
     }
@@ -333,6 +442,33 @@ export class ExerciseComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearTimeouts();
+    this.stopTimer();
+  }
+
+  private startTimer(): void {
+    this.timerIntervalId = window.setInterval(() => {
+      const current = this.remainingSeconds();
+      if (current <= 1) {
+        this.remainingSeconds.set(0);
+        this.stopTimer();
+        this.endSession();
+      } else {
+        this.remainingSeconds.update(v => v - 1);
+      }
+    }, 1000);
+  }
+
+  private stopTimer(): void {
+    if (this.timerIntervalId !== null) {
+      clearInterval(this.timerIntervalId);
+      this.timerIntervalId = null;
+    }
+  }
+
+  formatTime(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return mins > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${secs}s`;
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -455,10 +591,16 @@ export class ExerciseComponent implements OnInit, OnDestroy {
 
     // If answer is correct, advance immediately
     if (result.isCorrect) {
-      // Brief delay to show feedback, then advance
+      // Brief delay to show feedback, then advance or complete
       this.feedbackTimeoutId = window.setTimeout(() => {
         this.feedback.set('none');
-        this.loadNextCard();
+        
+        // In Master mode, check if all cards are now mastered at this level
+        if (result.isFast && this.currentMode() === 'master' && this.isSetMasteredAtCurrentLevel()) {
+          this.endSession();
+        } else {
+          this.loadNextCard();
+        }
       }, 500);
     } else {
       // For incorrect answers: clear input, show feedback, but don't advance
@@ -474,8 +616,51 @@ export class ExerciseComponent implements OnInit, OnDestroy {
 
   endSession(): void {
     this.clearTimeouts();
+    this.stopTimer();
+    
+    // Check if mastery achieved in Master mode
+    if (this.currentMode() === 'master') {
+      this.checkAndRecordMastery();
+    }
+    
     this.mathStateService.endSession();
     this.router.navigate(['/math/summary']);
+  }
+
+  /**
+   * Check if all cards in the set are mastered at the current level
+   */
+  private isSetMasteredAtCurrentLevel(): boolean {
+    const set = this.currentSet();
+    const levelId = this.currentLevel();
+    
+    if (!set || !levelId) {
+      return false;
+    }
+
+    // Get cards with progress
+    const cards = this.mathStateService.getCardsWithProgress(set);
+    
+    // Check if all cards are mastered at the current level
+    return cards.every(card => 
+      this.userProgressService.isCardMasteredAtLevel(card.id, levelId)
+    );
+  }
+
+  /**
+   * Check if all cards in the set are mastered at the current level and record set mastery
+   */
+  private checkAndRecordMastery(): void {
+    const set = this.currentSet();
+    const levelId = this.currentLevel();
+    
+    if (!set || !levelId) {
+      return;
+    }
+
+    if (this.isSetMasteredAtCurrentLevel()) {
+      this.userProgressService.recordSetMastery(set.id, levelId);
+    }
   }
 
   private clearTimeouts(): void {
